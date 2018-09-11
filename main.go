@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	http.HandleFunc("/", server.HandleHome())
+	http.HandleFunc("/", server.HandleHome("templates"))
 	http.ListenAndServe(":8080", nil)
 }

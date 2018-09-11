@@ -16,7 +16,7 @@ var _ = Describe("Server", func() {
 		server *httptest.Server
 	)
 	BeforeEach(func() {
-		server = httptest.NewServer(HandleHome())
+		server = httptest.NewServer(HandleHome("../templates/"))
 	})
 
 	Context("when visiting home page", func() {
@@ -25,16 +25,19 @@ var _ = Describe("Server", func() {
 			Expect(len(body)).NotTo(BeZero())
 		})
 
-		It("returns html & body", func() {
+		It("returns html, body, doctype", func() {
 			body := getResponseBody(server)
 			Expect(body).To(ContainSubstring("<html>"))
 			Expect(body).To(ContainSubstring("</html>"))
 			Expect(body).To(ContainSubstring("<body>"))
 			Expect(body).To(ContainSubstring("</body>"))
+			Expect(body).To(ContainSubstring("<!doctype html>"))
 		})
 
-		It("has title Concourse Speed", func() {
+		It("has head and title Concourse Speed", func() {
 			body := getResponseBody(server)
+			Expect(body).To(ContainSubstring("<head>"))
+			Expect(body).To(ContainSubstring("</head>"))
 			Expect(body).To(ContainSubstring("<title>Concourse Speed</title>"))
 		})
 	})
