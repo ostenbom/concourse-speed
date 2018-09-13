@@ -52,6 +52,17 @@ var _ = Describe("Server", func() {
 			Expect(body).To(ContainSubstring("<script src=\"/static/speedmap.js\">"))
 			Expect(body).To(ContainSubstring("<link rel=\"stylesheet\" href=\"/static/speedmap.css\">"))
 		})
+
+		It("loads d3", func() {
+			body := getResponseBody(server, "/")
+			Expect(body).To(ContainSubstring("<script src=\"/static/d3.min.js\">"))
+		})
+
+		It("renders the chart", func() {
+			body := getResponseBody(server, "/")
+			Expect(body).To(ContainSubstring("<div id=\"speedmap\"></div>"))
+			Expect(body).To(ContainSubstring("speedMap().render()"))
+		})
 	})
 
 	Context("when serving static files", func() {
@@ -61,6 +72,10 @@ var _ = Describe("Server", func() {
 
 		It("serves speedmap.css", func() {
 			getResponseBody(server, "/static/speedmap.css")
+		})
+
+		It("serves d3", func() {
+			getResponseBody(server, "/static/d3.min.js")
 		})
 	})
 
