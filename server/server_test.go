@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -79,13 +80,26 @@ var _ = Describe("Server", func() {
 		})
 	})
 
+	Context("when getting data from /api/speeddata", func() {
+		It("returns a successful response", func() {
+			getResponseBody(server, "/api/speeddata")
+		})
+
+		It("returns a JSON response", func() {
+			type JSONObj map[string]interface{}
+			var responseJSON JSONObj
+			response := getResponseBytes(server, "/api/speeddata")
+			Expect(json.Unmarshal(response, &responseJSON)).To(Succeed())
+		})
+	})
+
 	AfterEach(func() {
 		server.Close()
 	})
 
 })
 
-func getResponseBody(server *httptest.Server, path string) string {
+func getResponseBytes(server *httptest.Server, path string) []byte {
 	response, err := http.Get(server.URL + path)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -93,6 +107,12 @@ func getResponseBody(server *httptest.Server, path string) string {
 
 	body, err := ioutil.ReadAll(response.Body)
 	Expect(err).NotTo(HaveOccurred())
+
+	return body
+}
+
+func getResponseBody(server *httptest.Server, path string) string {
+	body := getResponseBytes(server, path)
 
 	return string(body)
 }

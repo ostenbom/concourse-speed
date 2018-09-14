@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 func NewRouter() *mux.Router {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HandleHome())
+	router.HandleFunc("/api/speeddata", HandleData())
 
 	staticFileDir := http.Dir("static")
 	staticFileHandler := http.StripPrefix("/static/", http.FileServer(staticFileDir))
@@ -28,5 +30,19 @@ func HandleHome() http.HandlerFunc {
 			fmt.Fprintf(w, "<html><p>Error: %s</p></html>", err)
 		}
 		io.WriteString(w, string(homeTemplate))
+	}
+}
+
+func HandleData() http.HandlerFunc {
+	return func(w http.ResponseWriter, t *http.Request) {
+		type Nothing struct {
+			Entry string
+		}
+		thing := Nothing{"something"}
+		thingBytes, err := json.Marshal(thing)
+		if err != nil {
+			fmt.Fprintf(w, "<html><p>Error: %s</p></html>", err)
+		}
+		w.Write(thingBytes)
 	}
 }
