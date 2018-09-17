@@ -13,17 +13,24 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/ostenbom/concourse-speed/server"
+	"github.com/ostenbom/concourse-speed/server/database/databasefakes"
 )
 
 var _ = Describe("Server", func() {
 	var (
-		server *httptest.Server
+		server   *httptest.Server
+		database *databasefakes.FakeDatabase
 	)
 	BeforeEach(func() {
 		_, filename, _, _ := runtime.Caller(0)
 		rootPath := path.Join(path.Dir(filename), "..")
 		os.Chdir(rootPath)
-		server = httptest.NewServer(NewRouter())
+
+		database = new(databasefakes.FakeDatabase)
+		router, err := NewRouter(database)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(database.PingCallCount()).To(Equal(1))
+		server = httptest.NewServer(router)
 	})
 
 	Context("when visiting home page", func() {
@@ -90,6 +97,11 @@ var _ = Describe("Server", func() {
 			var responseJSON JSONObj
 			response := getResponseBytes(server, "/api/speeddata")
 			Expect(json.Unmarshal(response, &responseJSON)).To(Succeed())
+		})
+
+		It("queries the database", func() {
+			getResponseBody(server, "/api/speeddata")
+			Expect(database.QueryCallCount()).To(Equal(1))
 		})
 	})
 

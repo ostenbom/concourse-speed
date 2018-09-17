@@ -9,18 +9,24 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/ostenbom/concourse-speed/server/database"
 )
 
-func NewRouter() *mux.Router {
+func NewRouter(db database.Database) (*mux.Router, error) {
 	router := mux.NewRouter()
 	router.HandleFunc("/", HandleHome())
-	router.HandleFunc("/api/speeddata", HandleData())
+
+	err := db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("could not query database: %s", err)
+	}
+	router.HandleFunc("/api/speeddata", HandleData(db))
 
 	staticFileDir := http.Dir("static")
 	staticFileHandler := http.StripPrefix("/static/", http.FileServer(staticFileDir))
 
 	router.PathPrefix("/static/").Handler(staticFileHandler)
-	return router
+	return router, nil
 }
 
 func HandleHome() http.HandlerFunc {
@@ -33,8 +39,9 @@ func HandleHome() http.HandlerFunc {
 	}
 }
 
-func HandleData() http.HandlerFunc {
+func HandleData(db database.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, t *http.Request) {
+		db.Query("haha")
 		type Nothing struct {
 			Entry string
 		}
