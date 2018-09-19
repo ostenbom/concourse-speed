@@ -124,6 +124,24 @@ var _ = Describe("Server", func() {
 				calledQuery, _ := database.QueryArgsForCall(0)
 				Expect(calledQuery).To(ContainSubstring(weekAgoString))
 			})
+
+			It("queries a month on month", func() {
+				getResponseBody(server, "/api/speeddata/month")
+				weekAgo := time.Now().AddDate(0, -1, 0)
+				weekAgoString := weekAgo.Format("2006-01-02 15:04:05")
+
+				calledQuery, _ := database.QueryArgsForCall(0)
+				Expect(calledQuery).To(ContainSubstring(weekAgoString))
+			})
+
+			It("queries a quarter on quarter", func() {
+				getResponseBody(server, "/api/speeddata/quarter")
+				weekAgo := time.Now().AddDate(0, -3, 0)
+				weekAgoString := weekAgo.Format("2006-01-02 15:04:05")
+
+				calledQuery, _ := database.QueryArgsForCall(0)
+				Expect(calledQuery).To(ContainSubstring(weekAgoString))
+			})
 		})
 
 	})

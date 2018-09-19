@@ -35,6 +35,7 @@ func HandleHome() http.HandlerFunc {
 		homeTemplate, err := ioutil.ReadFile(filepath.Join("templates", "index.html"))
 		if err != nil {
 			fmt.Fprintf(w, "<html><p>Error: %s</p></html>", err)
+			return
 		}
 		io.WriteString(w, string(homeTemplate))
 	}
@@ -42,40 +43,64 @@ func HandleHome() http.HandlerFunc {
 
 func HandleData(db database.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, t *http.Request) {
-		// vars := mux.Vars(t)
-		// period := vars["period"]
-		weekAgo := time.Now().AddDate(0, 0, -7)
-		weekAgoString := weekAgo.Format("2006-01-02 15:04:05")
+		vars := mux.Vars(t)
+		period := vars["period"]
+
+		timeAgo, err := timeFromPeriod(period)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Argument error: %s", err), http.StatusInternalServerError)
+		}
+		timeAgoString := timeAgo.Format("2006-01-02 15:04:05")
+
 		rows, err := db.Query(fmt.Sprintf(`SELECT builds.name, jobs.name, status, start_time, end_time
-		FROM builds INNER JOIN jobs ON builds.job_id = jobs.id WHERE start_time > %s;`, weekAgoString))
+																				FROM builds INNER JOIN jobs ON builds.job_id = jobs.id
+																				WHERE start_time > '%s';`, timeAgoString))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Query error: %s", err), http.StatusInternalServerError)
+			return
 		}
+
+		type DataResponse struct {
+			Build  string
+			Job    string
+			Status string
+			Start  *time.Time
+			End    *time.Time
+		}
+
+		var dataEntries []DataResponse
 
 		for rows.Next() {
-			var (
-				build  string
-				job    string
-				status string
-				start  time.Time
-				end    time.Time
-			)
-			err = rows.Scan(&build, &job, &status, &start, &end)
+			dataEntry := DataResponse{}
+			err = rows.Scan(&dataEntry.Build, &dataEntry.Job, &dataEntry.Status, &dataEntry.Start, &dataEntry.End)
 
-			fmt.Println(build, job, status, start, end)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Query error: %s", err), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("Scan error: %s", err), http.StatusInternalServerError)
+				return
 			}
+
+			dataEntries = append(dataEntries, dataEntry)
 		}
 
-		type Nothing struct {
-			Entry string
-		}
-		thing := Nothing{"something"}
-		thingBytes, err := json.Marshal(thing)
+		thingBytes, err := json.Marshal(dataEntries)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Marshal error: %s", err), http.StatusInternalServerError)
+			return
 		}
 		w.Write(thingBytes)
 	}
+}
+
+func timeFromPeriod(period string) (time.Time, error) {
+	if period == "week" {
+		return time.Now().AddDate(0, 0, -7), nil
+	} else if period == "month" {
+		return time.Now().AddDate(0, -1, 0), nil
+	} else if period == "quarter" {
+		return time.Now().AddDate(0, -3, 0), nil
+	} else if period == "year" {
+		return time.Now().AddDate(-1, 0, 0), nil
+	}
+
+	return time.Now(), fmt.Errorf("Period %s is not an accepted period", period)
 }
