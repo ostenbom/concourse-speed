@@ -2,7 +2,6 @@
 package databasefakes
 
 import (
-	"database/sql"
 	"sync"
 
 	_ "github.com/lib/pq"
@@ -19,18 +18,18 @@ type FakeDatabase struct {
 	pingReturnsOnCall map[int]struct {
 		result1 error
 	}
-	QueryStub        func(string, ...interface{}) (*sql.Rows, error)
+	QueryStub        func(string, ...interface{}) (database.Rows, error)
 	queryMutex       sync.RWMutex
 	queryArgsForCall []struct {
 		arg1 string
 		arg2 []interface{}
 	}
 	queryReturns struct {
-		result1 *sql.Rows
+		result1 database.Rows
 		result2 error
 	}
 	queryReturnsOnCall map[int]struct {
-		result1 *sql.Rows
+		result1 database.Rows
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -77,7 +76,7 @@ func (fake *FakeDatabase) PingReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeDatabase) Query(arg1 string, arg2 ...interface{}) (*sql.Rows, error) {
+func (fake *FakeDatabase) Query(arg1 string, arg2 ...interface{}) (database.Rows, error) {
 	fake.queryMutex.Lock()
 	ret, specificReturn := fake.queryReturnsOnCall[len(fake.queryArgsForCall)]
 	fake.queryArgsForCall = append(fake.queryArgsForCall, struct {
@@ -107,24 +106,24 @@ func (fake *FakeDatabase) QueryArgsForCall(i int) (string, []interface{}) {
 	return fake.queryArgsForCall[i].arg1, fake.queryArgsForCall[i].arg2
 }
 
-func (fake *FakeDatabase) QueryReturns(result1 *sql.Rows, result2 error) {
+func (fake *FakeDatabase) QueryReturns(result1 database.Rows, result2 error) {
 	fake.QueryStub = nil
 	fake.queryReturns = struct {
-		result1 *sql.Rows
+		result1 database.Rows
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeDatabase) QueryReturnsOnCall(i int, result1 *sql.Rows, result2 error) {
+func (fake *FakeDatabase) QueryReturnsOnCall(i int, result1 database.Rows, result2 error) {
 	fake.QueryStub = nil
 	if fake.queryReturnsOnCall == nil {
 		fake.queryReturnsOnCall = make(map[int]struct {
-			result1 *sql.Rows
+			result1 database.Rows
 			result2 error
 		})
 	}
 	fake.queryReturnsOnCall[i] = struct {
-		result1 *sql.Rows
+		result1 database.Rows
 		result2 error
 	}{result1, result2}
 }

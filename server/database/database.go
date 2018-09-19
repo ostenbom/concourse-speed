@@ -9,7 +9,7 @@ import (
 //go:generate counterfeiter . Database
 type Database interface {
 	Ping() error
-	Query(string, ...interface{}) (*sql.Rows, error)
+	Query(string, ...interface{}) (Rows, error)
 }
 
 type PostgresDatabase struct {
@@ -30,7 +30,7 @@ func (p *PostgresDatabase) Ping() error {
 	return p.db.Ping()
 }
 
-func (p *PostgresDatabase) Query(query string, args ...interface{}) (*sql.Rows, error) {
+func (p *PostgresDatabase) Query(query string, args ...interface{}) (Rows, error) {
 	return p.db.Query(query, args...)
 }
 

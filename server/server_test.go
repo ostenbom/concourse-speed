@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -20,6 +21,7 @@ var _ = Describe("Server", func() {
 	var (
 		server   *httptest.Server
 		database *databasefakes.FakeDatabase
+		rows     *databasefakes.FakeRows
 	)
 	BeforeEach(func() {
 		_, filename, _, _ := runtime.Caller(0)
@@ -88,21 +90,42 @@ var _ = Describe("Server", func() {
 	})
 
 	Context("when getting data from /api/speeddata", func() {
+		BeforeEach(func() {
+			rows = new(databasefakes.FakeRows)
+			rows.NextReturns(false)
+			database.QueryReturns(rows, nil)
+		})
+
 		It("returns a successful response", func() {
-			getResponseBody(server, "/api/speeddata")
+			getResponseBody(server, "/api/speeddata/week")
 		})
 
 		It("returns a JSON response", func() {
 			type JSONObj map[string]interface{}
 			var responseJSON JSONObj
-			response := getResponseBytes(server, "/api/speeddata")
+			response := getResponseBytes(server, "/api/speeddata/week")
 			Expect(json.Unmarshal(response, &responseJSON)).To(Succeed())
 		})
 
-		It("queries the database", func() {
-			getResponseBody(server, "/api/speeddata")
+		It("queries the database with the right query", func() {
+			getResponseBody(server, "/api/speeddata/week")
 			Expect(database.QueryCallCount()).To(Equal(1))
+			calledQuery, _ := database.QueryArgsForCall(0)
+			Expect(calledQuery).To(ContainSubstring("SELECT builds.name, jobs.name, status, start_time, end_time"))
+			Expect(calledQuery).To(ContainSubstring("FROM builds INNER JOIN jobs ON builds.job_id = jobs.id"))
 		})
+
+		Context("when querying with different periods", func() {
+			It("queries a week on week", func() {
+				getResponseBody(server, "/api/speeddata/week")
+				weekAgo := time.Now().AddDate(0, 0, -7)
+				weekAgoString := weekAgo.Format("2006-01-02 15:04:05")
+
+				calledQuery, _ := database.QueryArgsForCall(0)
+				Expect(calledQuery).To(ContainSubstring(weekAgoString))
+			})
+		})
+
 	})
 
 	AfterEach(func() {
