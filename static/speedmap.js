@@ -1,12 +1,59 @@
-function speedMap() {
+function speedMap(eventData) {
   var map = {};
+  var parsedEvents = parseBuildEventTimes(eventData);
+  var numBoxes = 50;
+  var speedMapData = buildEventsToMapData(parsedEvents, numBoxes, maxInBox);
+  var jobNames = getJobNames(parsedEvents);
+  var numJobs = jobNames.length;
+  var buckets = 9;
+  var colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"];
+
+	var chartWidth = document.documentElement.clientWidth;
+	var	boxWidth = chartWidth / numBoxes;
+	var chartHeight = boxWidth * numJobs;
+	var boxHeight = boxWidth
 
   map.render = function() {
     var svg = d3.select('#speedmap').append('svg')
                 .attr('width', '100%')
-                .attr('height', '100%')
+                .attr('height', chartHeight)
                 .append('g')
                 .attr('transform', 'translate(0,0)');
+
+    var scale = d3.scaleLog()
+												.domain([1, d3.max(speedMapData, function (d) { return d.Value; })])
+
+		function getColor(value) {
+			return d3.interpolateReds(scale(value))
+		}
+
+
+		var div = d3.select("#speedmap").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+		var cards = svg.selectAll(".card").data(speedMapData);
+
+
+		cards.enter().append("rect")
+			.attr("x", function(d) { return d.Box * boxWidth })
+			.attr("y", function(d) { return d.Job * boxHeight })
+			.attr("width", boxWidth)
+			.attr("height", boxHeight)
+			.style("fill", function(d) { return getColor(d.Value) })
+			.on("mouseover", function(d) {
+				div.transition()
+					.duration(200)
+					.style("opacity", 0.9);
+				div.html(d.Entry.Build + "</br>" + d.Entry.Job)
+					.style("left", (d3.event.pageX) + "px")
+					.style("top", (d3.event.pageY) + "px");
+			})
+			.on("mouseout", function(d) {
+				div.transition()
+					.duration(200)
+					.style("opacity", 0);
+			});
   };
 
   return map;
@@ -18,12 +65,12 @@ function maxInBox(boxData) {
 
   for (var i = 0; i < boxData.length; i++) {
     var data = boxData[i];
-    if (data.Time > maxData.Time) {
+    if (data.Time > maxData.Time && data.Status === "succeeded") {
       maxData = data;
     }
   }
 
-  return maxData.Time
+  return maxData
 }
 
 function getLatestStart(events) {
@@ -109,12 +156,13 @@ function buildEventsToMapData(trueEvents, numBoxes, boxChooser) {
     for (box = 0; box < numBoxes; box++) {
       var jobName = jobNames[job];
       var eventsInBox = getEventsInBox(events, boxTime, boxTimeLength, jobName);
-      var boxValue = boxChooser(eventsInBox);
+      var chosenEntry = boxChooser(eventsInBox);
       var boxData = {};
 
       boxData.Job = job;
       boxData.Box = box;
-      boxData.Value = boxValue;
+      boxData.Value = chosenEntry.Time;
+			boxData.Entry = chosenEntry;
 
       mapData.push(boxData);
 

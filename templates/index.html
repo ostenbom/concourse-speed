@@ -10,7 +10,15 @@
     <script src="/static/d3.min.js"></script>
     <script src="/static/speedmap.js"></script>
     <script>
-      speedMap().render();
+      function serverGetCallback(err, response) {
+        if (err === null) {
+          console.log(response);
+          speedMap(response).render();
+        }
+      }
+      
+      getJson("/api/speeddata/month", serverGetCallback);
+
     </script>
   </body>
 </html>

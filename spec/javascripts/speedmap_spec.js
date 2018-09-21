@@ -1,13 +1,15 @@
 describe("the speedmap", function() {
   var chart;
   var chartDiv;
+  var eventData;
 
   beforeEach(function() {
+    eventData = JSON.parse(exampleDataString);
     chartDiv = document.createElement("div");
     chartDiv.id = "speedmap";
     document.body.appendChild(chartDiv);
 
-    chart = speedMap();
+    chart = speedMap(eventData);
     chart.render();
   });
 
@@ -22,10 +24,6 @@ describe("the speedmap", function() {
 
   it("should have width 100%", function() {
     expect(getSvg().attr('width')).toBe('100%');
-  });
-
-  it("should have height 100%", function() {
-    expect(getSvg().attr('height')).toBe('100%');
   });
 
   function getSvg() {
@@ -45,7 +43,7 @@ describe("the data", function() {
     mapData = buildEventsToMapData(exampleData, 10, maxInBox);
     console.log(mapData)
     expect(mapData[0].Job).toBe(0);
-    expect(mapData[1].Job).toBe(1);
+    expect(mapData[1].Box).toBe(1);
     expect(mapData[mapData.length - 1].Job).toBe(4);
   });
 });
